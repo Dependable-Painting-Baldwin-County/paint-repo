@@ -1,0 +1,46 @@
+name = "dependablepainting"
+main = "src/index.ts"
+compatibility_date = "2024-08-01"
+
+[assets]
+directory = "./"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "dependable_leads"
+database_id = "your-d1-database-id"
+
+[[queues.producers]]
+binding = "NOTIFY_QUEUE"
+queue = "lead_notifications"
+
+[[queues.consumers]]
+queue = "lead_notifications"
+max_batch_size = 10
+max_batch_timeout = 30
+
+[durable_objects]
+bindings = [
+  { name = "CHAT_SESSIONS", class_name = "ChatSession" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatSession"]
+[vars]
+# Analytics & Ads
+GA_MEASUREMENT_ID = "G-G77MSX27Q1"
+GA_API_SECRET = "your-ga4-api-secret"
+GOOGLE_ADS_CONVERSION_ID = "123456789"
+
+# GA + BigQuery linkage
+BIGQUERY_PROJECT_ID = "paint-king-467123"
+GA_STREAM_ID = "11543672415"
+GA_ACCOUNT_ID = "616-463-1931"
+
+# Contact Info
+EMAIL_TO = "alex.dimmler5@icloud.com"
+PHONE_NUMBER = "2515254405"
+
+# AI Gateway
+AI_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/5a02a885ddcd3fdcfd15ac76faae8315/painter-gateway/workers-ai/@cf/meta/llama-3.1-8b-instruct"

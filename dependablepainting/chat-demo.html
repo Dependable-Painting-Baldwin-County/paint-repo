@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Chat Widget - Dependable Painting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #fafafa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .bot-message {
+            background-color: #e9ecef;
+            color: #333;
+        }
+        
+        .high-value-indicator {
+            background-color: #ff6b6b !important;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .chat-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .chat-input:focus {
+            border-color: #4CAF50;
+        }
+        
+        .file-upload-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .file-upload-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .file-upload-btn:hover {
+            background: #45a049;
+        }
+        
+        .typing-indicator {
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+            display: none;
+        }
+        
+        .session-info {
+            background: #e3f2fd;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #1976d2;
+        }
+        
+        .feature-info {
+            background: #fff3cd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .feature-info h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .feature-info ul {
+            margin-bottom: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>🎨 Paint Guru - AI Assistant</h2>
+            <p>Ask me about painting services, colors, estimates, or upload photos for analysis!</p>
+        </div>
+        
+        <div class="feature-info">
+            <h4>🚀 Advanced Features</h4>
+            <ul>
+                <li><strong>Persistent Memory:</strong> Chat continues across page navigation</li>
+                <li><strong>Image Analysis:</strong> Upload photos for surface and color recommendations</li>
+                <li><strong>Lead Qualification:</strong> High-value leads trigger instant notifications</li>
+                <li><strong>Analytics Tracking:</strong> All interactions tracked for optimization</li>
+                <li><strong>Smart Responses:</strong> GPT-4o powered with complete business context</li>
+            </ul>
+        </div>
+        
+        <div class="session-info">
+            <strong>Session ID:</strong> <span id="session-id">Loading...</span>
+            <br><strong>Page:</strong> <span id="current-page"></span>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                👋 Hi! I'm Paint Guru, your AI assistant for Dependable Painting. I can help you with:
+                <br><br>
+                🎨 Paint color recommendations<br>
+                🏠 Service information (interior, exterior, commercial)<br>
+                📸 Photo analysis for painting projects<br>
+                📞 Scheduling estimates<br>
+                💡 Surface preparation advice<br>
+                <br>
+                What can I help you with today?
+            </div>
+        </div>
+        
+        <div class="typing-indicator" id="typing-indicator">
+            Paint Guru is typing...
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Ask me about painting services, colors, or upload a photo...">
+            <div class="file-upload-container">
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                <button class="file-upload-btn" onclick="document.getElementById('file-input').click()">
+                    📸 Upload Photo for Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdvancedChatWidget {
+            constructor() {
+                this.sessionId = localStorage.getItem('chat-session-id') || null;
+                this.messages = JSON.parse(localStorage.getItem('chat-messages') || '[]');
+                this.currentPage = window.location.href;
+                
+                this.initializeElements();
+                this.loadExistingMessages();
+                this.updateSessionInfo();
+                
+                // Track chat start
+                if (window.dpAnalytics) {
+                    window.dpAnalytics.trackChatStart();
+                }
+            }
+            
+            initializeElements() {
+                this.messagesContainer = document.getElementById('chat-messages');
+                this.chatInput = document.getElementById('chat-input');
+                this.fileInput = document.getElementById('file-input');
+                this.typingIndicator = document.getElementById('typing-indicator');
+                
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendMessage();
+                    }
+                });
+                
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.uploadImage(e.target.files[0]);
+                    }
+                });
+            }
+            
+            updateSessionInfo() {
+                document.getElementById('session-id').textContent = this.sessionId || 'New session';
+                document.getElementById('current-page').textContent = this.currentPage;
+            }
+            
+            loadExistingMessages() {
+                this.messages.forEach(msg => {
+                    this.displayMessage(msg.content, msg.isUser, msg.isHighValue);
+                });
+            }
+            
+            async sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message) return;
+                
+                this.displayMessage(message, true);
+                this.chatInput.value = '';
+                this.showTyping();
+                
+                try {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    if (this.sessionId) {
+                        headers['X-Session-ID'] = this.sessionId;
+                    }
+                    
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            message: message,
+                            page: this.currentPage
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!this.sessionId && data.sessionId) {
+                        this.sessionId = data.sessionId;
+                        localStorage.setItem('chat-session-id', this.sessionId);
+                        this.updateSessionInfo();
+                    }
+                    
+                    this.hideTyping();
+                    this.displayMessage(data.reply, false, data.isHighValue);
+                    
+                    // Store messages locally for persistence
+                    this.messages.push(
+                        { content: message, isUser: true, isHighValue: false },
+                        { content: data.reply, isUser: false, isHighValue: data.isHighValue }
+                    );
+                    localStorage.setItem('chat-messages', JSON.stringify(this.messages.slice(-20))); // Keep last 20 messages
+                    
+                } catch (error) {
+                    this.hideTyping();
+                    this.displayMessage('Sorry, I encountered an error. Please try again.', false);
+                    console.error('Chat error:', error);
+                }
+            }
+            
+            async uploadImage(file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File too large. Please choose an image under 10MB.');
+                    return;
+                }
+                
+                this.displayMessage(`📸 Uploading image: ${file.name}`, true);
+                this.showTyping();
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    formData.append('sessionId', this.sessionId || 'new');
+                    
+                    const uploadResponse = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const uploadData = await uploadResponse.json();
+                    
+                    if (uploadData.success) {
+                        // Send message with image URL
+                        const headers = {
+                            'Content-Type': 'application/json'
+                        };
+                        
+                        if (this.sessionId) {
+                            headers['X-Session-ID'] = this.sessionId;
+                        }
+                        
+                        const chatResponse = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                message: 'Please analyze this image and provide painting recommendations.',
+                                page: this.currentPage,
+                                imageUrl: uploadData.imageUrl
+                            })
+                        });
+                        
+                        const chatData = await chatResponse.json();
+                        
+                        if (!this.sessionId && chatData.sessionId) {
+                            this.sessionId = chatData.sessionId;
+                            localStorage.setItem('chat-session-id', this.sessionId);
+                            this.updateSessionInfo();
+                        }
+                        
+                        this.hideTyping();
+                        this.displayMessage(chatData.reply, false, chatData.isHighValue);
+                        
+                        // Store messages
+                        this.messages.push(
+                            { content: `📸 Uploaded image: ${file.name}`, isUser: true, isHighValue: false },
+                            { content: chatData.reply, isUser: false, isHighValue: chatData.isHighValue }
+                        );
+                        localStorage.setItem('chat-messages', JSON.stringify(this.messages.slice(-20)));
+                        
+                    } else {
+                        this.hideTyping();
+                        this.displayMessage(`Upload failed: ${uploadData.error}`, false);
+                    }
+                    
+                } catch (error) {
+                    this.hideTyping();
+                    this.displayMessage('Image upload failed. Please try again.', false);
+                    console.error('Upload error:', error);
+                }
+            }
+            
+            displayMessage(content, isUser, isHighValue = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+                
+                if (isHighValue && !isUser) {
+                    messageDiv.classList.add('high-value-indicator');
+                    content = '🚨 HIGH VALUE LEAD DETECTED 🚨\n\n' + content;
+                }
+                
+                messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+                this.messagesContainer.appendChild(messageDiv);
+                this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            }
+            
+            showTyping() {
+                this.typingIndicator.style.display = 'block';
+            }
+            
+            hideTyping() {
+                this.typingIndicator.style.display = 'none';
+            }
+        }
+        
+        // Initialize chat widget when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AdvancedChatWidget();
+        });
+        
+        // Clear chat function for testing
+        window.clearChat = function() {
+            localStorage.removeItem('chat-session-id');
+            localStorage.removeItem('chat-messages');
+            location.reload();
+        };
+        
+        console.log('Advanced Chat Widget loaded! Use clearChat() to reset the session.');
+    </script>
+</body>
+</html>
