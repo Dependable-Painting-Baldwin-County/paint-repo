@@ -10,10 +10,10 @@
 
 	/**
 	 * This tells Wrangler to serve the static files (HTML, CSS, etc.) 
-	 * located in the "../dependablepainting/public" directory.
+	 * located in the "./public" directory.
 	 */
 	"site": {
-		"bucket": "./dependablepainting/public"
+		"bucket": "./public"
 	},
 
 	/**
@@ -22,8 +22,8 @@
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
 	 */
 	"services": [{
-		"binding": "PAINT_DISPATCHER_SERVICE",
-		"service": "paint-dispatcher"
+		"binding": "customer-worker-1",
+		"service": "paint-workers"
 	}],
 
 	"kv_namespaces": [

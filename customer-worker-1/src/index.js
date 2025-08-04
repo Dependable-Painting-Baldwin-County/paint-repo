@@ -10,19 +10,19 @@
  *    ball‑park estimates.  It uses the OpenAI Chat Completion API via the
  *    `OPENAI_API_KEY` environment variable.
  *  - Implements `/api/contact` to accept form submissions, optionally handle
- *    an uploaded image, persist the submission to a KV namespace (`SUBMISSIONS`)
+ *    an uploaded image, persist the submission to a KV namespace (`PAINTER_KVBINDING`)
  *    and send notification and confirmation emails via an external email API
- *    (e.g. SendGrid).  Email API keys must be stored as secrets.
+ *    (e.g. Resend).  Email API keys must be stored as secrets.
  *  - Implements `/api/upload` to accept image uploads and store them in an R2
- *    bucket (`IMAGE_BUCKET`).  Returns the URL of the stored image.
+ *    bucket (`paint-bucket`).  Returns the URL of the stored image.
  *  - Serves all other requests from the static asset binding (`ASSETS`).
  *
  * Environment bindings required in wrangler.jsonc:
  *  "services": [ { "binding": "PAINT_DISPATCHER_SERVICE", "service": "paint-dispatcher" } ],
- *  "kv_namespaces": [ { "binding": "SUBMISSIONS", "id": "<kv-namespace-id>" } ],
- *  "r2_buckets": [ { "binding": "IMAGE_BUCKET", "bucket_name": "paint-images" } ],
- *  "vars": { "EMAIL_ENDPOINT": "https://api.sendgrid.com/v3/mail/send" },
- *  secrets for OPENAI_API_KEY and EMAIL_API_KEY (SendGrid or other provider).
+ *  "kv_namespaces": [ { "binding": "PAINTER_KVBINDING", "id": "<kv-namespace-id>" } ],
+ *  "r2_buckets": [ { "binding": "paint-bucket", "bucket_name": "paint-images" } ],
+ *  "vars": { "EMAIL_ENDPOINT": "https://api.resend.com/emails" },
+ *  secrets for OPENAI_API_KEY and RESEND_API_KEY (Resend or other provider).
  */
 
 export default {
@@ -100,7 +100,7 @@ async function handleChat(request, env) {
 /**
  * Handle contact form submissions.  Uses the Fetch API to parse `formData` for
  * multipart forms.  Persists the data to a KV namespace and sends an email
- * via an external provider (SendGrid in this example) if configured.
+ * via an external provider (Resend in this example) if configured.
  */
 async function handleContact(request, env) {
   try {
@@ -116,65 +116,65 @@ async function handleContact(request, env) {
     // Persist submission to KV
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const record = { timestamp: new Date().toISOString(), name, email, phone, message };
-    await env.SUBMISSIONS.put(id, JSON.stringify(record));
+    await env.PAINTER_KVBINDING.put(id, JSON.stringify(record));
     // Optionally store the uploaded file to R2 and record the URL
     let imageUrl;
     if (file && file.size) {
       const fileName = `${id}-${file.name}`;
-      await env.IMAGE_BUCKET.put(fileName, file.stream(), { httpMetadata: { contentType: file.type } });
-      imageUrl = `https://${env.IMAGE_BUCKET.bucketName}.r2.cloudflarestorage.com/${fileName}`;
+      await env["paint-bucket"].put(fileName, file.stream(), { httpMetadata: { contentType: file.type } });
+      imageUrl = `https://${env["paint-bucket"].bucketName}.r2.cloudflarestorage.com/${fileName}`;
     }
-    // Prepare email payload.  Replace with your own email service integration.
+    // Prepare email payload for Resend.
+    const toEmail = env.DESTINATION_EMAIL || 'owner@example.com';
     const emailPayload = {
-      personalizations: [
-        {
-          to: [{ email: env.DESTINATION_EMAIL || 'owner@example.com' }],
-          subject: 'New Contact Form Submission',
-        },
-      ],
-      from: { email: env.DESTINATION_EMAIL || 'owner@example.com' },
-      content: [
-        {
-          type: 'text/plain',
-          value: `New submission from ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}\n${imageUrl ? 'Image: ' + imageUrl : ''}`,
-        },
-      ],
+      from: toEmail,
+      to: [toEmail],
+      subject: 'New Contact Form Submission',
+      text: `New submission from ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}\n${imageUrl ? 'Image: ' + imageUrl : ''}`,
     };
-    if (env.EMAIL_API_KEY && env.EMAIL_ENDPOINT) {
+    if (env.RESEND_API_KEY && env.EMAIL_ENDPOINT) {
       await fetch(env.EMAIL_ENDPOINT, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.EMAIL_API_KEY}`,
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(emailPayload),
       });
     }
     // Auto‑reply to the customer
-    if (env.EMAIL_API_KEY && env.EMAIL_ENDPOINT) {
+    if (env.RESEND_API_KEY && env.EMAIL_ENDPOINT) {
       const replyPayload = {
-        personalizations: [
-          {
-            to: [{ email }],
-            subject: 'Thanks for contacting Dependable Painting',
-          },
-        ],
-        from: { email: env.DESTINATION_EMAIL || 'owner@example.com' },
-        content: [
-          {
-            type: 'text/plain',
-            value: `Hi ${name},\n\nThanks for reaching out to Dependable Painting. We have received your message and will get back to you soon.\n\nBest regards,\nAlex`,
-          },
-        ],
+        from: toEmail,
+        to: [email],
+        subject: 'Thanks for contacting Dependable Painting',
+        text: `Hi ${name},\n\nThanks for reaching out to Dependable Painting. We have received your message and will get back to you soon.\n\nBest regards,\nAlex`,
       };
       await fetch(env.EMAIL_ENDPOINT, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.EMAIL_API_KEY}`,
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(replyPayload),
       });
+    }
+    // Write lead event to analytics engine if defined
+    if (env.ANALYTICS_ENGINE) {
+      const leadInfo = {
+        id,
+        timestamp: record.timestamp,
+        name,
+        email,
+        phone,
+        message,
+        imageUrl: imageUrl || null,
+      };
+      try {
+        await env.ANALYTICS_ENGINE.writeBlobs([JSON.stringify(leadInfo)]);
+      } catch (analyticsErr) {
+        console.error('Analytics write error', analyticsErr);
+      }
     }
     return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
@@ -197,8 +197,8 @@ async function handleUpload(request, env) {
     }
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const fileName = `${id}-${file.name}`;
-    await env.IMAGE_BUCKET.put(fileName, file.stream(), { httpMetadata: { contentType: file.type } });
-    const url = `https://${env.IMAGE_BUCKET.bucketName}.r2.cloudflarestorage.com/${fileName}`;
+    await env["paint-bucket"].put(fileName, file.stream(), { httpMetadata: { contentType: file.type } });
+    const url = `https://${env["paint-bucket"].bucketName}.r2.cloudflarestorage.com/${fileName}`;
     return new Response(JSON.stringify({ url }), { headers: { 'Content-Type': 'application/json' } });
   } catch (err) {
     console.error(err);
