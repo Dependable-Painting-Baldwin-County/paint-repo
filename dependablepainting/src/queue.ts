@@ -21,9 +21,8 @@ export default {
         // Track analytics based on notification type
         if (payload.type === 'estimate_request') {
           await analyticsService.trackFormSubmission(
-            payload, 
-            payload.page || 'unknown',
-            undefined // We don't have session ID in queue
+            payload as any, // Cast to EstimateRequest
+            payload.page || 'unknown'
           );
         } else if (payload.type === 'high_value_chat_lead') {
           await analyticsService.trackBusinessEvent(

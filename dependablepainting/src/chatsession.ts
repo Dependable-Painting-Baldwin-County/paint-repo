@@ -92,8 +92,7 @@ export class ChatSession {
         message,
         reply,
         page || 'unknown',
-        sessionId,
-        isHighValueLead
+        sessionId
       )
     );
 

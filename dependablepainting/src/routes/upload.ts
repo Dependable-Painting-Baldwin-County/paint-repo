@@ -12,9 +12,9 @@ export async function handleImageUpload(request: Request, env: Env, ctx: Executi
 
   try {
     const formData = await request.formData();
-    const file = formData.get('image') as File;
+    const file = formData.get('image');
     
-    if (!file) {
+    if (!file || !(file instanceof File)) {
       return Response.json({ error: 'No image file provided' }, { status: 400 });
     }
 

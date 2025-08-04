@@ -98,6 +98,29 @@ export class AnalyticsService {
     await this.sendToGA4(event);
   }
 
+  async trackChatInteraction(
+    userMessage: string,
+    aiResponse: string,
+    page: string,
+    sessionId?: string
+  ): Promise<void> {
+    const event = {
+      event_name: 'chat_interaction',
+      category: 'engagement',
+      label: 'ai_chat',
+      value: 10,
+      page_url: page,
+      session_id: sessionId,
+      custom_parameters: {
+        user_message_length: userMessage.length,
+        ai_response_length: aiResponse.length,
+        interaction_type: 'chat'
+      }
+    };
+
+    await this.sendToGA4(event);
+  }
+
   private async sendToGA4(event: AnalyticsEvent): Promise<void> {
     if (!this.env.GA_MEASUREMENT_ID || !this.env.GA_API_SECRET) {
       console.log('GA4 not configured, skipping analytics');
