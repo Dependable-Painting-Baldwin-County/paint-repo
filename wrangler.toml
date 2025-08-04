@@ -1,14 +1,14 @@
-name = "dependablepainting"
-main = "src/index.ts"
-compatibility_date = "2025-08-01"
+name = "paint-repo"
+main = "dependablepainting/src/*"
+compatibility_date = "08-04-2025"
 
 [assets]
-directory = "./public"
+directory = ".dependablepainting/public/*"
 
 [[d1_databases]]
-binding = "DB"
-database_name = "dependable_leads"
-database_id = "your-d1-database-id"
+binding = "PAINTERS_DB"
+database_name = "painters_d1"
+database_id = "5fb255c0-da76-4fb1-8721-e9c72f2fc84f"
 
 [[queues.producers]]
 binding = "NOTIFY_QUEUE"
@@ -37,6 +37,3 @@ GOOGLE_ADS_CONVERSION_ID = "123456789"
 BIGQUERY_PROJECT_ID = "paint-king-467123"
 GA_STREAM_ID = "11543672415"
 GA_ACCOUNT_ID = "616-463-1931"
-
-# AI Gateway
-AI_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/5a02a885ddcd3fdcfd15ac76faae8315/painter-gateway/workers-ai/@cf/meta/llama-3.1-8b-instruct"

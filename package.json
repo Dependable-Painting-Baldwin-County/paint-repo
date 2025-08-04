@@ -3,5 +3,9 @@
     "@genkit-ai/googleai": "^1.15.5",
     "firebase": "^12.0.0",
     "genkit": "^1.15.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250803.0",
+    "typescript": "^5.9.2"
   }
 }
