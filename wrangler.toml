@@ -1,12 +1,13 @@
 name = "paint-repo"
-main = "dependablepainting/src/*"
-compatibility_date = "08-04-2025"
+main = "dependablepainting/src/index.ts"
+compatibility_date = "2024-08-04"
 
 [assets]
-directory = ".dependablepainting/public/*"
+directory = "dependablepainting/public"
+binding = "ASSETS"
 
 [[d1_databases]]
-binding = "PAINTERS_DB"
+binding = "DB"
 database_name = "painters_d1"
 database_id = "5fb255c0-da76-4fb1-8721-e9c72f2fc84f"
 
