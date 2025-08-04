@@ -7,6 +7,9 @@
 	"name": "customer-worker-1",
 	"main": "src/index.js",
 	"compatibility_date": "2025-08-03",
+	"assets": {
+		"directory": "./dist"
+	},
 
 	/**
 	 * This tells Wrangler to serve the static files (HTML, CSS, etc.) 
@@ -15,17 +18,15 @@
 	"site": {
 		"bucket": "./public"
 	},
-
 	/**
-	 * This creates a binding to your other worker. Requests sent to this binding
-	 * will be handled by the "paint-dispatcher" worker.
+	 * This tells Wrangler to handle requests for the "customer-worker-1" service.
+	 * Requests that are not handled by this worker will be handled by the "paint-dispatcher" worker.
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
 	 */
 	"services": [{
 		"binding": "customer-worker-1",
 		"service": "paint-workers"
 	}],
-
 	"kv_namespaces": [
 		{ "binding": "PAINTER_KVBINDING", "id": "11034649f22b4115adbdbe97586bbc69" },
 		{ "binding": "paint-jobs", "id": "eaca44baf2f6489280ab39991d581c46" },
