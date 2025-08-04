@@ -28,6 +28,7 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_classes = ["ChatSession"]
+
 [vars]
 # Analytics & Ads
 GA_MEASUREMENT_ID = "G-G77MSX27Q1"
@@ -37,7 +38,6 @@ GOOGLE_ADS_CONVERSION_ID = "123456789"
 # GA + BigQuery linkage
 BIGQUERY_PROJECT_ID = "paint-king-467123"
 GA_STREAM_ID = "11543672415"
-GA_ACCOUNT_ID = "616-463-1931"
 
 # Painter KV binding
 PAINTER_KVBINDING = "11034649f22b4115adbdbe97586bbc69"
