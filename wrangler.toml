@@ -12,7 +12,13 @@ database_name = "painters_d1"
 database_id = "5fb255c0-da76-4fb1-8721-e9c72f2fc84f"
 
 [[queues.producers]]
-binding = "NOTIFY_QUEUE"
+binding = "QUEUE"
+queue = "painter-queues"
+
+[[queues.consumers]]
+queue = "painter-queues"
+max_batch_size = 10
+max_batch_timeout = 30
 
 [durable_objects]
 bindings = [
