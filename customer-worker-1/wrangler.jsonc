@@ -7,41 +7,37 @@
 	"name": "customer-worker-1",
 	"main": "src/index.js",
 	"compatibility_date": "2025-08-03",
-	"observability": {
-		"enabled": true
-	}
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": { "mode": "smart" },
 
 	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 * This tells Wrangler to serve the static files (HTML, CSS, etc.) 
+	 * located in the "../dependablepainting/public" directory.
 	 */
+	"site": {
+		"bucket": "./dependablepainting/public"
+	},
 
 	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" },
-
-	/**
-	 * Service Bindings (communicate between multiple Workers)
+	 * This creates a binding to your other worker. Requests sent to this binding
+	 * will be handled by the "paint-dispatcher" worker.
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
 	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+	"services": [{
+		"binding": "PAINT_DISPATCHER_SERVICE",
+		"service": "paint-dispatcher"
+	}],
+
+	"kv_namespaces": [
+		{ "binding": "PAINTER_KVBINDING", "id": "11034649f22b4115adbdbe97586bbc69" },
+		{ "binding": "paint-jobs", "id": "eaca44baf2f6489280ab39991d581c46" },
+		{ "binding": "dead-queues", "id": "75b1041f8ecc48328d64037177806dd5" }
+	],
+	"r2_buckets": [
+		{ "binding": "paint-bucket", "bucket_name": "paint-bucket" }
+	],
+	"analytics_engine_datasets": [
+		{ "binding": "ANALYTICS_ENGINE", "dataset": "analytics_events" }
+	],
+	"vars": {
+		"AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/5a02a885ddcd3fdcfd15ac76faae8315/ai-gateway/"
+	}
 }
