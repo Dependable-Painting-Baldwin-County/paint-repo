@@ -1,28 +1,11 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "customer-worker-1",
 	"main": "src/index.js",
 	"compatibility_date": "2025-08-03",
 	"assets": {
-		"directory": "./dist"
+		"directory": "./public"
 	},
-
-	/**
-	 * This tells Wrangler to serve the static files (HTML, CSS, etc.) 
-	 * located in the "./public" directory.
-	 */
-	"site": {
-		"bucket": "./public"
-	},
-	/**
-	 * This tells Wrangler to handle requests for the "customer-worker-1" service.
-	 * Requests that are not handled by this worker will be handled by the "paint-dispatcher" worker.
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
 	"services": [{
 		"binding": "customer-worker-1",
 		"service": "paint-workers"
