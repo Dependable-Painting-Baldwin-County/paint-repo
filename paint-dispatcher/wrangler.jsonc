@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "paint-dispatcher",
-  "main": "index.js",
+  "main": "src/index.js",
   "compatibility_date": "2025-08-03",
   "observability": {
     "enabled": true
@@ -51,7 +51,7 @@
     "producers": [
       {
         "queue": "painter-queues",
-        "binding": "pain"
+        "binding": "TASK_QUEUE"
       }
     ]
   }

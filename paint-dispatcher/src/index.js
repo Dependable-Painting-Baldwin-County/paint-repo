@@ -251,9 +251,9 @@ async function handleContactForm(request, env) {
     }
 
     const emailPayload = {
-      from: env.SOURCE_EMAIL || 'contact@emdependablepainttinng.work',
+      from: env.SOURCE_EMAIL || 'contact@dependablepainting.work',
       to: [env.DESTINATION_EMAIL || 'just-paint-it@dependablepainting.work'],
-      subject: `Contact Form Submission om ${name}`,
+      subject: `Contact Form Submission from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || ''}\nMessage: ${message}\nImage URL: ${imageUrl || ''}`
     };
 
