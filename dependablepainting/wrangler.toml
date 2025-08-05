@@ -1,33 +1,11 @@
-name = "paint-repo"
-main = "dependablepainting/src/index.ts"
+name = "dependablepainting"
+main = "src/index.ts"
 compatibility_date = "2024-08-04"
 
 [assets]
-directory = "dependablepainting/public"
+directory = "public"
 binding = "ASSETS"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "painters_d1"
-database_id = "5fb255c0-da76-4fb1-8721-e9c72f2fc84f"
-
-[[queues.producers]]
-binding = "QUEUE"
-queue = "painter-queues"
-
-[[queues.consumers]]
-queue = "painter-queues"
-max_batch_size = 10
-max_batch_timeout = 30
-
-[durable_objects]
-bindings = [
-  { name = "CHAT_SESSIONS", class_name = "ChatSession" }
-]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["ChatSession"]
 [vars]
 # Analytics & Ads
 GA_MEASUREMENT_ID = "G-G77MSX27Q1"
@@ -38,6 +16,3 @@ GOOGLE_ADS_CONVERSION_ID = "123456789"
 BIGQUERY_PROJECT_ID = "paint-king-467123"
 GA_STREAM_ID = "11543672415"
 GA_ACCOUNT_ID = "616-463-1931"
-
-# Painter KV binding
-PAINTER_KVBINDING = "11034649f22b4115adbdbe97586bbc69"

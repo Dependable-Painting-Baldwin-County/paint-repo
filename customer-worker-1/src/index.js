@@ -13,14 +13,76 @@ export default {
       return handleUpload(request, env);
     }
     if (pathname.startsWith('/api/')) {
-      return env.PAINT_DISPATCHER_SERVICE.fetch(request);
+      return env['paint-workers'].fetch(request);
     }
     return env.ASSETS.fetch(request);
   },
 };
 
 async function handleChat(request, env) {
-  // ... unchanged ...
+  try {
+    const { message, context = {} } = await request.json();
+    
+    if (!message || typeof message !== 'string') {
+      return new Response(JSON.stringify({ error: 'Message is required' }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Forward chat requests to the paint-dispatcher for AI processing
+    const dispatcherResponse = await env['paint-workers'].fetch(new Request(request.url.replace('/api/chat', '/api/enrich'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: message,
+        context: { 
+          ...context, 
+          source: 'customer_chat',
+          timestamp: new Date().toISOString()
+        }
+      })
+    }));
+
+    if (!dispatcherResponse.ok) {
+      throw new Error('Dispatcher service unavailable');
+    }
+
+    const result = await dispatcherResponse.json();
+    
+    // Log analytics for chat interaction
+    if (env.ANALYTICS_ENGINE) {
+      try {
+        await env.ANALYTICS_ENGINE.writeDataPoint({
+          blobs: [JSON.stringify({ 
+            event: "chat_interaction", 
+            message: message.substring(0, 100), // Limit PII
+            response: result.message?.substring(0, 100),
+            timestamp: new Date().toISOString()
+          })]
+        });
+      } catch (err) {
+        console.error("Analytics write error", err);
+      }
+    }
+
+    return new Response(JSON.stringify({ 
+      response: result.message || 'I apologize, but I cannot provide a response right now. Please feel free to contact us directly.',
+      success: true 
+    }), { 
+      headers: { 'Content-Type': 'application/json' } 
+    });
+
+  } catch (err) {
+    console.error('Chat error:', err);
+    return new Response(JSON.stringify({ 
+      error: 'Unable to process chat request. Please try again or contact us directly.',
+      response: 'I apologize, but I cannot assist you right now. Please feel free to call us at your convenience or submit a contact form.'
+    }), { 
+      status: 500, 
+      headers: { 'Content-Type': 'application/json' } 
+    });
+  }
 }
 
 async function handleContact(request, env) {
