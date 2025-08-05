@@ -7,13 +7,11 @@
 		"directory": "./public"
 	},
 	"services": [{
-		"binding": "customer-worker-1",
-		"service": "paint-workers"
+		"binding": "paint-workers",
+		"service": "paint-dispatcher"
 	}],
 	"kv_namespaces": [
-		{ "binding": "PAINTER_KVBINDING", "id": "11034649f22b4115adbdbe97586bbc69" },
-		{ "binding": "paint-jobs", "id": "eaca44baf2f6489280ab39991d581c46" },
-		{ "binding": "dead-queues", "id": "75b1041f8ecc48328d64037177806dd5" }
+		{ "binding": "PAINTER_KVBINDING", "id": "11034649f22b4115adbdbe97586bbc69" }
 	],
 	"r2_buckets": [
 		{ "binding": "paint-bucket", "bucket_name": "paint-bucket" }
@@ -22,6 +20,7 @@
 		{ "binding": "ANALYTICS_ENGINE", "dataset": "analytics_events" }
 	],
 	"vars": {
-		"AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/5a02a885ddcd3fdcfd15ac76faae8315/ai-gateway/"
+		"EMAIL_ENDPOINT": "https://api.resend.com/emails",
+		"DESTINATION_EMAIL": "just-paint-it@dependablepainting.work"
 	}
 }

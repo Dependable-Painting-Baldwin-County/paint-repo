@@ -1,47 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
-/**
- * Central Orchestrator Worker
- *
- * This worker acts as the backend orchestrator for Dependable Painting. It
- * exposes a handful of API routes that are consumed by the customer‑facing
- * worker (customer‑worker‑1). The routes include:
- *
- *  - `/api/price` (POST): perform basic price estimations for various
- *    painting services. Accepts a JSON payload describing the job and
- *    returns a simple price breakdown. No secrets are exposed; pricing
- *    formulas live here to prevent tampering on the client side.
- *
- *  - `/api/queue` (POST): enqueue a task into a background queue. This is
- *    useful for long running workflows such as sending follow‑up emails or
- *    generating proposals. If a Cloudflare Queue binding named
- *    `TASK_QUEUE` is configured in `wrangler.jsonc`, tasks will be enqueued
- *    automatically. Otherwise the call will no‑op and immediately return.
- *
- *  - `/api/enrich` (POST): enrich customer or lead data by calling an
- *    external AI service. Uses the OpenAI Chat Completion API when the
- *    `OPENAI_API_KEY` secret is available. This keeps the API key hidden
- *    from the client while still allowing AI assistance.
- *
- *  - `/api/automation` (POST): orchestrate a multi‑step workflow by
- *    combining price estimation, queueing and data enrichment. Clients can
- *    define a sequence of steps in the request body, and the worker will
- *    execute them in order, returning an aggregated result.
- *
- * Any other request is answered with a simple 404 response. This worker
- * should be bound to the `PAINT_DISPATCHER_SERVICE` in the customer worker's
- * `wrangler.jsonc` so that `/api/*` requests not handled by the
- * customer‑facing worker are forwarded here.
- */
-
 export default {
     async fetch(request, env, ctx) {
         try {
@@ -58,6 +14,8 @@ export default {
                         return handleEnrich(request, env);
                     case '/api/automation':
                         return handleAutomation(request, env, ctx);
+                    case '/api/contact':
+                        return handleContactForm(request, env);
                     default:
                         break;
                 }
@@ -76,23 +34,6 @@ export default {
         }
     },
 };
-
-/**
- * Calculate an estimate based on simple heuristics. Pricing logic is kept on
- * the server to prevent tampering. The formula used here is illustrative and
- * can be adjusted to better reflect real world costs. It accepts a JSON
- * payload in the following shape:
- *
- *  {
- *    "serviceType": "interior" | "exterior" | "commercial" | "cabinet" | "sheetrock" | "epoxy",
- *    "squareFeet": number,              // approximate area in square feet
- *    "floors": number,                  // number of floors (for exterior jobs)
- *    "rooms": number,                   // number of rooms (for interior jobs)
- *    "extras": string[]                 // optional extras like 'trim', 'ceiling', etc.
- *  }
- *
- * Returns an object with a base price, extras breakdown and total.
- */
 async function handlePrice(request, env) {
     try {
         const body = await request.json();
@@ -161,21 +102,6 @@ async function handlePrice(request, env) {
         });
     }
 }
-
-/**
- * Enqueue a task for background processing. The payload should be a JSON
- * object describing the task. When configured, the TASK_QUEUE binding will
- * deliver the message to a Cloudflare Queue. If the binding is missing, the
- * task is ignored but the response still indicates success. This allows
- * integration with the customer worker without causing errors if queues are
- * unavailable in development.
- *
- * Example request body:
- *  {
- *    "taskName": "sendFollowUpEmail",
- *    "payload": { "leadId": "123" }
- *  }
- */
 async function handleQueue(request, env, ctx) {
     try {
         const { taskName, payload } = await request.json();
@@ -201,20 +127,6 @@ async function handleQueue(request, env, ctx) {
         });
     }
 }
-
-/**
- * Enrich customer data using an AI model. This function takes a request with
- * a JSON body containing a `prompt` string and optional `context` object.
- * It calls the OpenAI Chat Completion API behind the scenes if the
- * `OPENAI_API_KEY` is available. This keeps the API key private while still
- * allowing the frontend to leverage AI assistance.
- *
- * Example request body:
- *  {
- *    "prompt": "Generate a polite thank you note for the following customer.",
- *    "context": { "name": "Jane Doe", "service": "interior painting" }
- *  }
- */
 async function handleEnrich(request, env) {
     try {
         const { prompt, context = {} } = await request.json();
@@ -270,24 +182,6 @@ async function handleEnrich(request, env) {
         });
     }
 }
-
-/**
- * Orchestrate multiple operations in sequence. The request body should
- * include an array of steps to execute. Each step is an object with a
- * `type` property indicating which handler to call (`price`, `queue`,
- * `enrich`) and a `params` object containing the arguments for that
- * handler. Steps are executed sequentially and the aggregated results
- * returned as an array.
- *
- * Example request body:
- *  {
- *    "steps": [
- *      { "type": "price", "params": { "serviceType": "interior", "squareFeet": 500 } },
- *      { "type": "enrich", "params": { "prompt": "Draft a follow‑up note", "context": { "name": "John" } } },
- *      { "type": "queue", "params": { "taskName": "sendFollowUpEmail", "payload": { "email": "john@example.com" } } }
- *    ]
- *  }
- */
 async function handleAutomation(request, env, ctx) {
     try {
         const { steps } = await request.json();
@@ -340,4 +234,54 @@ async function handleAutomation(request, env, ctx) {
             headers: { 'Content-Type': 'application/json' },
         });
     }
+}
+
+// ... 
+
+// ... 
+
+async function handleContactForm(request, env) {
+  try {
+    const { name, email, phone, message, imageUrl } = await request.json();
+    if (!name || !email || !message) {
+      return new Response(JSON.stringify({ error: 'Name, email, and message are required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const emailPayload = {
+      from: env.SOURCE_EMAIL || 'contact@emdependablepainttinng.work',
+      to: [env.DESTINATION_EMAIL || 'just-paint-it@dependablepainting.work'],
+      subject: `Contact Form Submission om ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || ''}\nMessage: ${message}\nImage URL: ${imageUrl || ''}`
+    };
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.RESEND_API_KEY || ''}`
+      },
+      body: JSON.stringify(emailPayload)
+    });
+
+    if (!response.ok) {
+      console.error('Resend API error:', await response.text());
+      return new Response(JSON.stringify({ error: 'Failed to send email' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ sent: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    console.error('Contact form error:', err);
+    return new Response(JSON.stringify({ error: 'Invalid input' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
